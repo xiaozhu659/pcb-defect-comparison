@@ -1,0 +1,29 @@
+# Python 生成物
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# 虚拟环境
+.venv
+
+# 数据集、模型权重与训练产物(体积大,不入库)
+data/
+runs/
+outputs/
+weights/
+*.pt
+*.pth
+*.onnx
+
+# 密钥(绝不能入库)
+.env
+*.key
+
+# 编辑器与系统文件
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

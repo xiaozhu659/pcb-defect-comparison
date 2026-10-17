@@ -1,0 +1,41 @@
+[project]
+name = "pcb-defect-comparison"
+version = "0.1.0"
+description = "工业 PCB 表面缺陷检测:传统检测模型与视觉大模型的对比(灵境竞赛组 · 后端 AI 方向 第二阶段)"
+readme = "README.md"
+authors = [
+    { name = "yangqichao", email = "yangqichao66@163.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "huggingface-hub>=0.35.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "opencv-python>=4.12.0.88",
+    "pandas>=3.0.6",
+    "pillow>=12.3.0",
+    "torch>=2.9.0",
+    "torchvision>=0.24.0",
+    "tqdm>=4.70.1",
+    "ultralytics>=8.4.0",
+]
+
+[project.scripts]
+pcb-defect-comparison = "pcb_defect_comparison:main"
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu128" }]
+torchvision = [{ index = "pytorch-cu128" }]
+
+[tool.uv]
+# 缓存盘(C:)与项目盘(D:)不同卷,无法硬链接,统一改为复制以免反复告警
+link-mode = "copy"
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
