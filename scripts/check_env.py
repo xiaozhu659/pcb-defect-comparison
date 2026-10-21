@@ -4,8 +4,12 @@
     uv run scripts/check_env.py
 """
 
+import os
 import platform
 import sys
+
+# 与下载脚本保持一致:国内直连 huggingface.co 不稳定,默认走镜像
+os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
 
 def main() -> None:
@@ -44,8 +48,6 @@ def main() -> None:
         print("!! 未检测到可用 GPU")
 
     print("-" * 60)
-    import os
-
     from huggingface_hub import HfApi
 
     endpoint = os.environ.get("HF_ENDPOINT", "(默认 huggingface.co)")

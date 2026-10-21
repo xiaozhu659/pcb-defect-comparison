@@ -47,7 +47,8 @@ def main() -> None:
         name=args.name,
         exist_ok=True,
         seed=0,
-        # 小目标检测常用的一点增强:轻微缩放与平移,但不开水平翻转的强变形
+        # 小目标检测常用增强:轻微旋转、平移与缩放。
+        # 水平翻转对 PCB 缺陷是安全的——缺陷类别与左右方向无关(不同于交通标志)。
         degrees=5.0,
         translate=0.1,
         scale=0.3,

@@ -83,7 +83,7 @@ def draw_row(axes, name: str, yolo: dict, llm: dict) -> None:
     # 第一列:真实标注
     axes[0].imshow(image)
     axes[0].set_title(f"真实标注:{len(truth_boxes)} 处 "
-                      f"{CLASS_NAMES_ZH.get(truth_types[0].title(), truth_types[0]) if truth_types else ''}",
+                      f"{CLASS_NAMES_ZH.get(truth_types[0].capitalize(), truth_types[0]) if truth_types else ''}",
                       fontsize=9)
     for cx, cy, bw, bh in truth_boxes:
         axes[0].add_patch(patches.Rectangle(
@@ -107,7 +107,7 @@ def draw_row(axes, name: str, yolo: dict, llm: dict) -> None:
     axes[2].imshow(image)
     predicted = llm_record["defects"]
     summary = "未发现缺陷" if not predicted else "、".join(
-        sorted({CLASS_NAMES_ZH.get(str(d.get("type", "")).title(), d.get("type", "?"))
+        sorted({CLASS_NAMES_ZH.get(str(d.get("type", "")).capitalize(), d.get("type", "?"))
                 for d in predicted}))
     axes[2].set_title(f"视觉大模型:报出 {len(predicted)} 处 · {summary}"
                       f"({llm_record.get('seconds', 0):.0f} 秒)", fontsize=9)

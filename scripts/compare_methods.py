@@ -71,7 +71,8 @@ def center_error(predicted: list, actual: list) -> float:
 def evaluate(path: Path, truth: dict[str, dict]) -> dict:
     records = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()
                if line.strip()]
-    type_hits = detected = 0
+    type_hits = detected = strict_hits = 0
+    tp = fp = fn = 0
     count_errors, center_errors, type_fp = [], [], []
     total_seconds = 0.0
     total_tokens = 0
@@ -87,6 +88,13 @@ def evaluate(path: Path, truth: dict[str, dict]) -> dict:
 
         if actual["types"] & types:
             type_hits += 1
+        # 严格口径:预测出的类型集合必须和真实集合完全一致。
+        # 只用"包含真实类型"太宽松——把 6 类全报一遍也会被算成命中,会严重高估。
+        if types == actual["types"]:
+            strict_hits += 1
+        tp += len(types & actual["types"])
+        fp += len(types - actual["types"])
+        fn += len(actual["types"] - types)
         if record["defects"]:
             detected += 1
         count_errors.append(abs(len(record["defects"]) - actual["count"]))
@@ -99,9 +107,14 @@ def evaluate(path: Path, truth: dict[str, dict]) -> dict:
         total_tokens += record.get("prompt_tokens", 0) + record.get("completion_tokens", 0)
 
     n = len(records)
+    precision = tp / (tp + fp) if tp + fp else 0.0
+    recall = tp / (tp + fn) if tp + fn else 0.0
     return {
         "样本数": n,
-        "类型判断准确率": type_hits / n * 100,
+        "类型命中率(宽松)": type_hits / n * 100,
+        "类型命中率(严格)": strict_hits / n * 100,
+        "类型精确率": precision * 100,
+        "类型召回率": recall * 100,
         "检出率": detected / n * 100,
         "数量平均绝对误差": float(np.mean(count_errors)),
         "平均误报类型数": float(np.mean(type_fp)),
@@ -113,15 +126,24 @@ def evaluate(path: Path, truth: dict[str, dict]) -> dict:
 
 def plot(df: pd.DataFrame) -> None:
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.6))
-    bars = df["类型判断准确率"].tolist()
-    axes[0].bar(df["方法"], bars, color=df["颜色"])
+    x = np.arange(len(df))
+    width = 0.38
+    axes[0].bar(x - width / 2, df["类型命中率(宽松)"], width,
+                color=df["颜色"], alpha=0.55, label="宽松(包含真实类型)")
+    axes[0].bar(x + width / 2, df["类型命中率(严格)"], width,
+                color=df["颜色"], label="严格(类型集合完全一致)")
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(df["方法"], rotation=12, fontsize=8)
+    axes[0].legend(fontsize=8)
     axes[0].set_ylabel("准确率(%)")
-    axes[0].set_title("缺陷类型判断准确率")
-    for i, v in enumerate(bars):
-        axes[0].text(i, v + 1.5, f"{v:.1f}%", ha="center", fontsize=9)
+    axes[0].set_title("缺陷类型判断:两种口径")
+    for i, (loose, strict) in enumerate(zip(df["类型命中率(宽松)"], df["类型命中率(严格)"])):
+        axes[0].text(i - width / 2, loose + 1.5, f"{loose:.1f}", ha="center", fontsize=8)
+        axes[0].text(i + width / 2, strict + 1.5, f"{strict:.1f}", ha="center", fontsize=8)
 
     misses = (100 - df["检出率"]).tolist()
     axes[1].bar(df["方法"], misses, color=df["颜色"])
+    axes[1].tick_params(axis="x", rotation=12, labelsize=8)
     axes[1].set_ylabel("漏检率(%)")
     axes[1].set_title("漏检率(越低越好)")
     for i, v in enumerate(misses):
@@ -135,8 +157,7 @@ def plot(df: pd.DataFrame) -> None:
     for i, v in enumerate(seconds):
         axes[2].text(i, v * 1.15, f"{v:.2f}s", ha="center", fontsize=9)
 
-    for ax in axes:
-        ax.tick_params(axis="x", labelsize=8, rotation=12)
+    axes[2].tick_params(axis="x", labelsize=8, rotation=12)
     fig.suptitle("PCB 缺陷检测:传统模型 vs 视觉大模型", fontsize=14)
     fig.tight_layout(rect=(0, 0, 1, 0.94))
     fig.savefig(OUT_DIR / "fig_method_comparison.png", dpi=130)
