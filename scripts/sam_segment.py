@@ -3,7 +3,7 @@
 这一步的价值
 ------------
 检测框只能告诉你"缺陷在这一带",而分割掩膜能算出**缺陷的精确面积**——
-有了面积就可以客观地划分严重程度(比如"占板面 1% 以上算严重"),
+有了面积就可以客观地划分严重程度(比如"占整图 1% 以上算严重"),
 这是视觉大模型完全做不到的事:它只能给"轻微/明显"这种主观描述。
 
 用法:
@@ -118,7 +118,7 @@ def main() -> None:
                     defect["box"][3] - defect["box"][1],
                     fill=False, edgecolor="#1565c0", linewidth=1.2))
             total_area = sum(d["area_ratio"] for d in defects)
-            ax.set_title(f"检出 {len(defects)} 处,合计占板面 {total_area:.3f}%\n"
+            ax.set_title(f"检出 {len(defects)} 处,合计占整图 {total_area:.3f}%\n"
                          f"单处最小 {min(d['area_ratio'] for d in defects):.3f}%",
                          fontsize=9)
             ax.axis("off")
