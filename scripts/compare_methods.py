@@ -74,7 +74,7 @@ def evaluate(path: Path, truth: dict[str, dict]) -> dict:
                if line.strip()]
     type_hits = detected = strict_hits = 0
     tp = fp = fn = 0
-    count_errors, center_errors, type_fp = [], [], []
+    count_errors, same_type_errors, center_errors, type_fp = [], [], [], []
     total_seconds = 0.0
     total_tokens = 0
 
@@ -99,6 +99,11 @@ def evaluate(path: Path, truth: dict[str, dict]) -> dict:
         if record["defects"]:
             detected += 1
         count_errors.append(abs(len(record["defects"]) - actual["count"]))
+        # 只统计"类型正确"的缺陷数量。原始数量误差会被"每类各报一个"的低成本策略
+        # 占便宜——报 6 类得到 6 个,而真实平均 4.3 个,误差反而显得小。
+        same_type_errors.append(
+            abs(sum(1 for d in record["defects"]
+                    if str(d.get("type", "")).lower() in actual["types"]) - actual["count"]))
         # 只统计"预测出图里根本不存在的那类缺陷",衡量误报
         type_fp.append(len(types - actual["types"]))
         error = center_error(centers, actual["centers"])
@@ -118,6 +123,7 @@ def evaluate(path: Path, truth: dict[str, dict]) -> dict:
         "类型召回率": recall * 100,
         "检出率": detected / n * 100,
         "数量平均绝对误差": float(np.mean(count_errors)),
+        "同类型数量误差": float(np.mean(same_type_errors)),
         "平均误报类型数": float(np.mean(type_fp)),
         "定位误差(归一化)": float(np.mean(center_errors)) if center_errors else float("nan"),
         "单张耗时(秒)": total_seconds / n,
