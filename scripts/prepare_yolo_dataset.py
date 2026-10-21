@@ -107,8 +107,15 @@ def main() -> None:
         for image_path, content, _ in subset:
             method = link_or_copy(image_path, image_dir / image_path.name)
             (label_dir / f"{image_path.stem}.txt").write_text(content, encoding="utf-8")
+        # 三个推理脚本(yolo_infer / llm_infer / sam_segment)都按这个清单读验证集图片,
+        # 必须在这里一并生成;否则换一台电脑重新准备数据后,推理脚本会找不到文件。
+        listing = YOLO_DIR / f"{split}.txt"
+        listing.write_text(
+            "\n".join(str(image_path.resolve()) for image_path, _, _ in subset),
+            encoding="utf-8",
+        )
         print(f"{split}: {len(subset)} 张图,{sum(p[2] for p in subset)} 个框"
-              f"(图片处理方式:{method})")
+              f"(图片处理方式:{method},清单:{listing.name})")
 
     yaml_path = YOLO_DIR / "data.yaml"
     names_block = "\n".join(f"  {i}: {name}" for i, name in enumerate(CLASS_ORDER))
