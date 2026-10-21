@@ -67,6 +67,60 @@ uv sync
 uv run scripts/check_env.py     # 确认 CUDA、显卡、依赖都可用
 ```
 
+## 复现步骤
+
+### 前提条件
+
+| 项目 | 要求 |
+| --- | --- |
+| 显卡 | NVIDIA 独显,建议 ≥ 8 GB 显存(需支持 CUDA 12.8 的驱动) |
+| 网络 | 数据集走 hf-mirror 镜像,无需代理;YOLO 与 SAM 的权重从 GitHub Releases 下载,网络不稳时需自备代理 |
+| API | DeepSeek API key(`deepseek-flash` 支持图片输入),全部实验约花费 1.75 美元 |
+
+### 完整流程
+
+总耗时约 1.5 小时(在 RTX 5060 上实测),其中训练 15 分钟、大模型三档约 50 分钟。
+
+```bash
+uv sync                                   # 安装依赖(含 CUDA 12.8 版 PyTorch)
+uv run scripts/check_env.py               # 环境自检
+uv run scripts/download_dataset.py        # 下载 916 MB 数据集(约 8~10 分钟)
+uv run scripts/analyze_dataset.py         # 数据统计
+uv run scripts/prepare_yolo_dataset.py    # 标注转换与训练/验证划分
+uv run scripts/train_yolo.py --epochs 100 --imgsz 1024 --batch 8   # 约 15 分钟
+uv run scripts/yolo_infer.py              # 传统方案推理(约 10 秒)
+```
+
+大模型方案需要先设置 API key(**只放在环境变量里,不要写进代码**):
+
+```powershell
+$env:DEEPSEEK_API_KEY = "你的 key"        # PowerShell
+```
+
+```bash
+export DEEPSEEK_API_KEY="你的 key"        # bash
+```
+
+```bash
+uv run scripts/llm_infer.py --workers 6 --effort none   # 约 3 分钟,花费 < $0.05
+uv run scripts/llm_infer.py --workers 6 --effort low    # 约 20 分钟,约 $0.60
+uv run scripts/llm_infer.py --workers 6 --effort high   # 约 30 分钟,约 $1.12
+uv run scripts/sam_segment.py             # YOLO + SAM 分割(首次会下载 74.5 MB 权重)
+uv run scripts/compare_methods.py         # 量化对比
+uv run scripts/visualize_side_by_side.py  # 并排可视化
+```
+
+大模型那三条命令支持**断点续跑**:中断后重新执行会跳过已完成的图片。
+
+### 结果位置
+
+| 产物 | 路径 |
+| --- | --- |
+| 量化对比表 | `outputs/comparison.csv` |
+| 方法对比图 | `outputs/fig_method_comparison.png` |
+| 并排可视化 | `outputs/fig_side_by_side.png` |
+| 分割结果与面积 | `outputs/sam_segmentation.jsonl` |
+
 ## 目录结构
 
 ```
