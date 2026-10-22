@@ -155,4 +155,4 @@ uv run scripts/visualize_side_by_side.py  # 并排可视化
 - [x] 大模型方案:视觉 API 调用与三档思考强度
 - [x] 并排对比与结论
 - [x] 说明文档与个人感悟(见 [docs/项目说明.md](docs/项目说明.md))
-- [ ] 演示视频与交付打包
+- [x] 演示视频与交付打包
